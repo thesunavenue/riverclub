@@ -1,11 +1,11 @@
-# RiverCrew: bàn poker online miễn phí cho nhóm bạn
+# RiverClub: bàn poker online miễn phí cho nhóm bạn
 
 ## Mục tiêu sản phẩm
 Một web app để nhóm bạn **chơi Texas Hold'em ngay trong vòng 60 giây**, không cần bài, bàn hay chip thật. Phù hợp khi đi team building hoặc khi bạn bè ở xa nhau.
 
 - **Người dùng:** nhóm bạn và đồng nghiệp đã quen nhau, không phải người lạ trên bàn công khai.
 - **Giá trị cốt lõi:** tiện lợi, vui vẻ, đơn giản hơn các sản phẩm cùng loại.
-- **Giai đoạn hiện tại:** miễn phí hoàn toàn, chạy trên subdomain Vercel (dự kiến `rivercrew.vercel.app`; nếu đã có người dùng thì đề xuất `riverroom.vercel.app`).
+- **Giai đoạn hiện tại:** miễn phí hoàn toàn, chạy trên subdomain Vercel (`river-club.vercel.app`).
 - **Tham khảo:** học luồng "tạo phòng, gửi link, chơi" của các app như PokerNow, nhưng tự thiết kế. Không sao chép mã nguồn, giao diện, logo, tên hay nội dung của họ.
 
 ## Nguyên tắc pháp lý (bắt buộc, không tự ý nới lỏng)

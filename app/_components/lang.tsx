@@ -11,7 +11,7 @@ interface LangCtx {
 }
 
 const Ctx = createContext<LangCtx | null>(null);
-const KEY = "rivercrew:lang";
+const KEY = "riverclub:lang";
 
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");

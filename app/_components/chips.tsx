@@ -11,7 +11,7 @@ interface ChipsCtx {
 }
 
 const Ctx = createContext<ChipsCtx | null>(null);
-const KEY = "rivercrew:unit";
+const KEY = "riverclub:unit";
 
 /** Lets every amount on the table be shown in chips or in big blinds; tap any amount to switch. */
 export function ChipsProvider({ bigBlind, children }: { bigBlind: number; children: ReactNode }) {

@@ -1,4 +1,4 @@
-# RiverCrew
+# RiverClub
 
 Free Texas Hold'em table for a group of friends: create a room, send the link, play.
 No sign-up. Play chips only: no real value, 18+.

@@ -1,4 +1,4 @@
--- RiverCrew rooms. One row per room; the whole room state (including the deck and
+-- RiverClub rooms. One row per room; the whole room state (including the deck and
 -- every player's hole cards) lives in `state`, so this table must NEVER be readable
 -- by clients. RLS is enabled with no policies: only the server, using the secret key
 -- (which bypasses RLS), can read or write it. Clients get per-player views via the API.

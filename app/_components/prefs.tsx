@@ -16,7 +16,7 @@ interface PrefsCtx extends Prefs {
 }
 
 const DEFAULTS: Prefs = { theme: "river", sound: true, voice: true };
-const KEY = "rivercrew:prefs";
+const KEY = "riverclub:prefs";
 const Ctx = createContext<PrefsCtx | null>(null);
 
 /** Per-device preferences: table theme, sound effects, spoken actions. */

@@ -135,7 +135,7 @@ export function ShareButtons({ code, showLink }: { code: string; showLink?: bool
           <button
             className="btn btn-sm"
             style={{ flex: 1 }}
-            onClick={() => navigator.share({ title: "RiverCrew", text: t("shareText"), url }).catch(() => {})}
+            onClick={() => navigator.share({ title: "RiverClub", text: t("shareText"), url }).catch(() => {})}
           >
             {t("share")}
           </button>

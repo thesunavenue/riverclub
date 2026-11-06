@@ -53,7 +53,7 @@ export const api = {
 
 // ---------- device storage (wrapped: storage can be blocked) ----------
 
-const tokenKey = (code: string) => `rivercrew:token:${code}`;
+const tokenKey = (code: string) => `riverclub:token:${code}`;
 
 export const storage = {
   getToken(code: string): string | null {
@@ -75,14 +75,14 @@ export const storage = {
   },
   getName(): string {
     try {
-      return localStorage.getItem("rivercrew:name") ?? "";
+      return localStorage.getItem("riverclub:name") ?? "";
     } catch {
       return "";
     }
   },
   setName(name: string) {
     try {
-      localStorage.setItem("rivercrew:name", name);
+      localStorage.setItem("riverclub:name", name);
     } catch {}
   },
 };

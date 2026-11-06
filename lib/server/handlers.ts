@@ -62,7 +62,7 @@ export function errorResponse(e: unknown): Response {
     return json({ error: { code: e.code, message: e.message } }, ROOM_STATUS[e.code] ?? 400);
   if (e instanceof EngineError)
     return json({ error: { code: e.code, message: e.message } }, ENGINE_STATUS[e.code] ?? 400);
-  console.error("[rivercrew] unexpected error", e);
+  console.error("[riverclub] unexpected error", e);
   return json({ error: { code: "INTERNAL", message: "Something went wrong" } }, 500);
 }
 

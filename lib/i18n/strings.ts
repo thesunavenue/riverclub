@@ -3,7 +3,7 @@
  * Placeholders: {name}, {n}, {s}, {code}.
  */
 const en = {
-  appName: "RiverCrew",
+  appName: "RiverClub",
   tagline: "Poker night with friends. No cards, no chips, no sign-up.",
   howItWorks: "Create a room, send the link, play.",
   createRoom: "Create room",
@@ -30,7 +30,7 @@ const en = {
   copyLink: "Copy link",
   copied: "Copied!",
   share: "Share",
-  shareText: "Join my poker table on RiverCrew",
+  shareText: "Join my poker table on RiverClub",
 
   startGame: "Start game",
   needTwo: "Need at least 2 seated players",
@@ -153,7 +153,7 @@ const en = {
 export type StringKey = keyof typeof en;
 
 const vi: Record<StringKey, string> = {
-  appName: "RiverCrew",
+  appName: "RiverClub",
   tagline: "Poker cùng bạn bè. Không cần bài, chip hay đăng ký.",
   howItWorks: "Tạo phòng, gửi link, vào chơi.",
   createRoom: "Tạo phòng",
@@ -180,7 +180,7 @@ const vi: Record<StringKey, string> = {
   copyLink: "Sao chép link",
   copied: "Đã chép!",
   share: "Chia sẻ",
-  shareText: "Vào bàn poker của mình trên RiverCrew",
+  shareText: "Vào bàn poker của mình trên RiverClub",
 
   startGame: "Bắt đầu",
   needTwo: "Cần ít nhất 2 người đã ngồi",

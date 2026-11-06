@@ -32,10 +32,10 @@ function makeBroadcaster(env: SupabaseEnv | null) {
         }),
         signal: AbortSignal.timeout(2000),
       });
-      if (!res.ok) console.warn(`[rivercrew] realtime broadcast failed: HTTP ${res.status}`);
+      if (!res.ok) console.warn(`[riverclub] realtime broadcast failed: HTTP ${res.status}`);
     } catch {
       // Clients also poll, so a missed broadcast only delays an update.
-      console.warn("[rivercrew] realtime broadcast failed");
+      console.warn("[riverclub] realtime broadcast failed");
     }
   };
 }
@@ -43,11 +43,11 @@ function makeBroadcaster(env: SupabaseEnv | null) {
 // Only the in-memory *data* lives on globalThis (so dev hot reload keeps rooms).
 // The service is per module instance, so code changes apply after a reload.
 type Cache = { memoryStore?: MemoryRoomStore };
-const g = globalThis as typeof globalThis & { __rivercrew?: Cache };
+const g = globalThis as typeof globalThis & { __riverclub?: Cache };
 let service: RoomService | undefined;
 
 export function getRoomService(): RoomService {
-  const cache = (g.__rivercrew ??= {});
+  const cache = (g.__riverclub ??= {});
   if (service) return service;
 
   const env = supabaseEnv();
@@ -58,7 +58,7 @@ export function getRoomService(): RoomService {
     );
   } else {
     console.warn(
-      "[rivercrew] Supabase env not set: using in-memory room store (local dev only, rooms vanish on restart).",
+      "[riverclub] Supabase env not set: using in-memory room store (local dev only, rooms vanish on restart).",
     );
     // Survives Next dev hot reloads because it lives on globalThis.
     store = cache.memoryStore ??= new MemoryRoomStore();
