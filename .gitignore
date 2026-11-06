@@ -1,0 +1,13 @@
+node_modules/
+.env*.local
+.env
+coverage/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+!.env.example
+
+# build caches / deploy
+tsconfig.tsbuildinfo
+.vercel
+.claude/
