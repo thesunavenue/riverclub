@@ -5,7 +5,7 @@ Một web app để nhóm bạn **chơi Texas Hold'em ngay trong vòng 60 giây*
 
 - **Người dùng:** nhóm bạn và đồng nghiệp đã quen nhau, không phải người lạ trên bàn công khai.
 - **Giá trị cốt lõi:** tiện lợi, vui vẻ, đơn giản hơn các sản phẩm cùng loại.
-- **Giai đoạn hiện tại:** miễn phí hoàn toàn, chạy trên subdomain Vercel (`river-club.vercel.app`).
+- **Giai đoạn hiện tại:** miễn phí hoàn toàn, chạy trên subdomain Vercel (`playriver.vercel.app`).
 - **Tham khảo:** học luồng "tạo phòng, gửi link, chơi" của các app như PokerNow, nhưng tự thiết kế. Không sao chép mã nguồn, giao diện, logo, tên hay nội dung của họ.
 
 ## Nguyên tắc pháp lý (bắt buộc, không tự ý nới lỏng)
