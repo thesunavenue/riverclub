@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { RoomView } from "../room";
-import { playChips, playKnock, playSwish, playWin, playYourTurn, say } from "./sound";
+import { playApplause, playChips, playKnock, playSwish, playWin, playYourTurn, say } from "./sound";
 
 const WORDS: Record<string, string> = { check: "Check", call: "Call", bet: "Bet", raise: "Raise", fold: "Fold" };
 
@@ -42,10 +42,12 @@ export function useTableSounds(view: RoomView | null, opts: { sound: boolean; vo
     // My turn just started.
     if (h.legal && !(ph?.legal && ph.log.length === h.log.length) && sound) setTimeout(playYourTurn, 350);
 
-    // I won something.
+    // I won something: chime and applause, on my device only.
     const me = view.me?.id;
-    if (h.result && !ph?.result && me && h.result.pots.some((pot) => pot.winners.includes(me)) && sound)
+    if (h.result && !ph?.result && me && h.result.pots.some((pot) => pot.winners.includes(me)) && sound) {
       setTimeout(playWin, 400);
+      setTimeout(playApplause, 650);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version]);
 }

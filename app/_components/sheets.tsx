@@ -3,7 +3,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { RoomView } from "@/lib/room";
 import { AVATARS } from "@/lib/room";
 import { ConfirmButton, LangSwitch, Sheet, ShareButtons } from "./bits";
-import { THEMES, usePrefs } from "./prefs";
+import { DECKS, TABLES, THEMES, usePrefs } from "./prefs";
+import { Card } from "./bits";
 import { useLang } from "./lang";
 
 const EMOJI = ["👍", "😂", "😮", "🔥", "🙈", "🎉"];
@@ -107,6 +108,33 @@ export function MenuSheet({
             >
               <span className="swatch" aria-hidden />
               {t(`theme_${th}`)}
+            </button>
+          ))}
+        </div>
+        <p className="section-title">{t("tableStyle")}</p>
+        <div className="seg-row">
+          {TABLES.map((x) => (
+            <button key={x} className="theme-chip" aria-pressed={prefs.table === x} onClick={() => prefs.set({ table: x })}>
+              <span className={`table-swatch tbl-${x}`} aria-hidden />
+              {t(`table_${x}`)}
+            </button>
+          ))}
+        </div>
+        <p className="section-title">{t("deckStyle")}</p>
+        <div className="seg-row">
+          {DECKS.map((x) => (
+            <button
+              key={x}
+              className={`theme-chip deck-chip deck-${x}`}
+              aria-pressed={prefs.deck === x}
+              onClick={() => prefs.set({ deck: x })}
+            >
+              <span className="deck-sample" aria-hidden>
+                <Card card="Ah" size="sm" />
+                <Card card="Kd" size="sm" />
+                <Card card="Qc" size="sm" />
+              </span>
+              {t(`deck_${x}`)}
             </button>
           ))}
         </div>

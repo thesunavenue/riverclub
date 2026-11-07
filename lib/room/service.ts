@@ -13,7 +13,10 @@ import { historyFor, roomViewFor, type HistoryItem, type RoomView } from "./view
 
 const MAX_ATTEMPTS = 8;
 /** Rooms with no player activity for this long are deleted (chips disappear with the room). */
-export const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
+/** Rooms nobody has touched for this long are deleted. */
+export const ROOM_IDLE_MS = 12 * 60 * 60 * 1000;
+/** Closed rooms stay a little while so friends still see "table closed", then go. */
+export const ROOM_CLOSED_MS = 10 * 60 * 1000;
 
 export interface RoomServiceDeps {
   store: RoomStore;
@@ -66,8 +69,8 @@ export class RoomService {
         settings: input.settings,
       });
       if (await this.store.insert(room)) {
-        // Housekeeping without a cron job: creating a room clears rooms idle for a day.
-        await this.store.deleteInactive(ctx.now - ROOM_IDLE_MS).catch(() => 0);
+        // Housekeeping without a cron job: creating a room clears idle and closed rooms.
+        await this.store.deleteInactive(ctx.now - ROOM_IDLE_MS, ctx.now - ROOM_CLOSED_MS).catch(() => 0);
         return { token, playerId, view: roomViewFor(room, playerId, ctx.now) };
       }
     }

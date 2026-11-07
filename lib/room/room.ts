@@ -377,6 +377,10 @@ export function closeRoom(room: RoomState, ctx: RoomCtx, hostId: string): RoomSt
   r.turnDeadline = null;
   r.turnKey = null;
   r.nextHandAt = null;
+  // Nothing in a closed room is needed again: keep only what the "table closed" screen shows.
+  r.hand = null;
+  r.history = [];
+  r.chat = [];
   return r;
 }
 

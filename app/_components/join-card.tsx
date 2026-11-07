@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { RoomView } from "@/lib/room";
 import { storage } from "@/lib/client/api";
-import { ShareButtons } from "./bits";
+import { ConfirmButton, ShareButtons } from "./bits";
 import { useLang } from "./lang";
 
 /** What a guest sees on opening an invite link: who invited them, the table, one name field. */
@@ -43,7 +43,15 @@ export function JoinCard({ view, busy, onJoin }: { view: RoomView; busy: boolean
 }
 
 /** Before the first hand: the host gets the invite link; seated friends see that they're in. */
-export function WaitingCard({ view }: { view: RoomView }) {
+export function WaitingCard({
+  view,
+  busy,
+  onCommand,
+}: {
+  view: RoomView;
+  busy: boolean;
+  onCommand: (body: Record<string, unknown>) => void;
+}) {
   const { t } = useLang();
   const me = view.me;
   const host = view.players.find((p) => p.isHost)?.name ?? "";
@@ -55,6 +63,9 @@ export function WaitingCard({ view }: { view: RoomView }) {
         <div className="big-code">{view.code}</div>
         <ShareButtons code={view.code} showLink />
         <div className="small muted">{t("seatedCount", { n: seated })}</div>
+        <ConfirmButton className="btn btn-sm btn-ghost" disabled={busy} onConfirm={() => onCommand({ cmd: "closeRoom" })}>
+          {t("closeTable")}
+        </ConfirmButton>
       </div>
     );
   return (

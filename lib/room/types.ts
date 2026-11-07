@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   startingStack: 1000,
   smallBlind: 10,
   bigBlind: 20,
-  turnSeconds: 30,
+  turnSeconds: 15,
 };
 
 /** Pause between hands so people can see the showdown. */

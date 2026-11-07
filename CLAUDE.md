@@ -40,7 +40,7 @@ Nếu một yêu cầu đi ngược các nguyên tắc này, hãy dừng lại v
 ### Thiết lập phòng (có mặc định sẵn, không bắt buộc chỉnh)
 - Chip khởi điểm: mặc định 1.000.
 - Small blind / big blind: mặc định 10/20.
-- Thời gian mỗi lượt: mặc định 30 giây.
+- Thời gian mỗi lượt: mặc định 15 giây.
 
 ### Chip
 - **Chip theo từng phòng:** mọi người nhận mức khởi điểm như nhau và chip mất đi khi hết phòng.

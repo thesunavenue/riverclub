@@ -176,8 +176,8 @@ details[open] > summary::before { content: "▾ "; }
 .card.sm .c-big { font-size: 1.6em; right: 0.1em; bottom: 0.02em; }
 .card.back {
   background:
-    radial-gradient(circle at 50% 50%, rgba(240, 163, 94, 0.55) 0 0.32em, transparent 0.36em),
-    repeating-linear-gradient(45deg, #24474d 0 0.22em, #1c3a3f 0.22em 0.44em);
+    radial-gradient(circle at 50% 50%, var(--accent) 0 0.3em, transparent 0.34em),
+    repeating-linear-gradient(45deg, var(--felt-1) 0 0.22em, var(--felt-2) 0.22em 0.44em);
   box-shadow: inset 0 0 0 0.16em #f2eee4, 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 .card.slot { background: rgba(0, 0, 0, 0.18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
@@ -304,9 +304,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 }
 .pos-tag.bb { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .gain {
-  position: absolute; left: 50%; top: -8px; color: var(--ok); font-weight: 800; font-size: 14px; white-space: nowrap;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); pointer-events: none; animation: floatUp 2.4s ease-out both; z-index: 5;
+  position: absolute; left: calc(50% + 34px); top: 6px; color: var(--ok); font-weight: 900; font-size: 17px; white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); pointer-events: none; animation: gainFloat 3s cubic-bezier(0.2, 0.7, 0.3, 1) both; z-index: 5;
 }
+@keyframes gainFloat {
+  0% { transform: translate(-50%, 8px) scale(0.7); opacity: 0; }
+  12% { transform: translate(-50%, 0) scale(1.15); opacity: 1; }
+  22% { transform: translate(-50%, -4px) scale(1); }
+  70% { opacity: 1; }
+  100% { transform: translate(-50%, -34px); opacity: 0; }
+}
+/* the centre "X wins" line: readable for a moment, then fades so the table stays clean */
+.fade-late { animation: fadeLate 4.2s ease-in both; }
+@keyframes fadeLate { 0% { opacity: 0; transform: scale(0.96); } 8% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; } }
 .code-lines { display: grid; text-align: left; line-height: 1.15; }
 .code-lines .blinds { font-size: 11px; color: var(--muted); }
 
@@ -349,3 +359,54 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 .hist-act span.me { color: var(--accent); }
 .hist-line { display: flex; gap: 8px; align-items: center; }
 .hist-win { color: var(--ok); font-weight: 700; }
+
+/* ---------- extra theme ---------- */
+:root[data-theme="slate"] {
+  --bg: #13171c; --bg2: #181d24; --surface: #1f262f; --surface2: #29323d; --line: #36414e;
+  --muted: #a3afbd; --faint: #687586;
+  --felt-1: #4a5a6c; --felt-2: #34414f; --rail: #10141a;
+  --accent: #8fd3c1; --accent-ink: #0b211b; --accent-soft: rgba(143, 211, 193, 0.16);
+}
+.theme-slate .swatch { background: linear-gradient(135deg, #4a5a6c 55%, #8fd3c1 55%); }
+
+/* ---------- table styles ---------- */
+/* soft: flat felt, thin light edge and an inner line; calm and light on the eyes */
+:root[data-table="soft"] .table {
+  border-radius: 50% / 34%;
+  background: radial-gradient(ellipse at 50% 35%, var(--felt-1), var(--felt-2) 85%);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.1), 0 14px 40px rgba(0, 0, 0, 0.3);
+}
+:root[data-table="soft"] .table::after {
+  content: ""; position: absolute; inset: 16px; border-radius: inherit; border: 1px solid rgba(255, 255, 255, 0.07); pointer-events: none;
+}
+/* wood: warm wooden rail around the felt */
+:root[data-table="wood"] .table {
+  box-shadow:
+    inset 0 0 0 10px #6b4429, inset 0 0 0 12px #3e2716, inset 0 0 0 13px rgba(255, 220, 170, 0.18),
+    inset 0 0 40px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.seg-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.seg-row .theme-chip { flex-direction: column; justify-content: center; gap: 6px; padding: 8px 4px; font-size: 13px; }
+.table-swatch { width: 40px; height: 26px; border-radius: 50%; background: radial-gradient(ellipse, var(--felt-1), var(--felt-2)); }
+.tbl-soft { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.tbl-classic { box-shadow: inset 0 0 0 3px var(--rail); outline: 1px solid var(--line); }
+.tbl-wood { box-shadow: inset 0 0 0 4px #6b4429; }
+.deck-sample { display: flex; gap: 2px; }
+.deck-sample .card { font-size: 8px; }
+
+/* ---------- card styles ---------- */
+:root[data-deck="two"] { --s-d: var(--s-h); --s-c: var(--s-s); }
+:root[data-deck="tint"] .card:not(.back):not(.slot) { color: #fff; background: var(--s-s); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 2px 6px rgba(0, 0, 0, 0.35); }
+:root[data-deck="tint"] .card.s-h:not(.back):not(.slot) { background: linear-gradient(180deg, #e0484c, #c22f35); }
+:root[data-deck="tint"] .card.s-d:not(.back):not(.slot) { background: linear-gradient(180deg, #3a7fd6, #2563b8); }
+:root[data-deck="tint"] .card.s-c:not(.back):not(.slot) { background: linear-gradient(180deg, #2f9a5a, #22804a); }
+:root[data-deck="tint"] .card.s-s:not(.back):not(.slot) { background: linear-gradient(180deg, #3a4246, #22292c); }
+:root[data-deck="tint"] .deck-chip .card { color: #fff; }
+/* the samples in the menu always show their own style, whatever is selected */
+.deck-four .s-s, .deck-two .s-s, .deck-two .s-c { color: #1b2224 !important; }
+.deck-four .s-h, .deck-two .s-h, .deck-two .s-d { color: #d0363b !important; }
+.deck-four .s-d { color: #2569c2 !important; } .deck-four .s-c { color: #23844a !important; }
+.deck-four .card, .deck-two .card { background: linear-gradient(180deg, #ffffff, #f2efe7) !important; }
+.deck-tint .card { color: #fff !important; }
+.deck-tint .card.s-h { background: #d0363b !important; } .deck-tint .card.s-d { background: #2569c2 !important; }
+.deck-tint .card.s-c { background: #23844a !important; } .deck-tint .card.s-s { background: #2b3235 !important; }

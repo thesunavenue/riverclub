@@ -25,6 +25,12 @@ const SLOTS: [number, number][] = [
 ];
 const CENTER: [number, number] = [50, 46];
 
+/** "+4BB" style: winnings in big blinds read at a glance. */
+function bbText(amount: number, bigBlind: number): string {
+  const bb = Math.round((amount / bigBlind) * 10) / 10;
+  return `${bb}BB`;
+}
+
 function slotOf(seat: number, mySeat: number): [number, number] {
   return SLOTS[(seat - mySeat + 9) % 9]!;
 }
@@ -50,9 +56,10 @@ interface TableProps {
   busy: boolean;
   onSit: (seat: number) => void;
   onJoin: (name: string) => void;
+  onCommand: (body: Record<string, unknown>) => void;
 }
 
-export function Table({ view, now, busy, onSit, onJoin }: TableProps) {
+export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps) {
   const { t } = useLang();
   const { fmt } = useChips();
   const me = view.me;
@@ -112,13 +119,17 @@ export function Table({ view, now, busy, onSit, onJoin }: TableProps) {
             <Amount className="pot" value={hand.pot} prefix={`${t("pot", { n: "" }).trim()} `} />
           </span>
         )}
-        {hand?.result && view.status !== "finished" && <Result hand={hand} players={view.players} />}
+        {hand?.result && view.status !== "finished" && (
+          <div className="fade-late" key={`res-${hand.handNumber}`}>
+            <Result hand={hand} players={view.players} />
+          </div>
+        )}
       </div>
 
       {/* a guest from an invite link: name, then straight to a seat */}
       {!me && view.status !== "finished" && <JoinCard view={view} busy={busy} onJoin={onJoin} />}
       {/* before the first hand: invite link for the host, "you're in" for friends */}
-      {me && view.status === "waiting" && <WaitingCard view={view} />}
+      {me && view.status === "waiting" && <WaitingCard view={view} busy={busy} onCommand={onCommand} />}
 
       {/* game over */}
       {view.status === "finished" && <GameOver view={view} />}
@@ -177,7 +188,7 @@ export function Table({ view, now, busy, onSit, onJoin }: TableProps) {
             <div className="name">{p.name}</div>
             {gains.has(p.id) && (
               <span key={`gain-${hand?.handNumber}`} className="gain num">
-                +{fmt(gains.get(p.id)!)}
+                +{bbText(gains.get(p.id)!, view.settings.bigBlind)}
               </span>
             )}
             <Amount className="stack" value={p.stack} />

@@ -147,6 +147,21 @@ describe("cleanup", () => {
     expect(await store.get(old.view.code)).toBeNull();
     expect(await store.get(fresh.view.code)).not.toBeNull();
   });
+
+  it("a closed room is emptied at once and deleted a few minutes later", async () => {
+    const { code, host } = await threeSeated();
+    await service.startGame(code, host.token);
+    await service.closeRoom(code, host.token);
+    const closed = (await store.get(code))!;
+    expect(closed.hand).toBeNull();
+    expect(closed.history ?? []).toEqual([]);
+    now += 5 * 60 * 1000;
+    await service.createRoom({ hostName: "Other" });
+    expect(await store.get(code)).not.toBeNull(); // friends still see "table closed"
+    now += 6 * 60 * 1000;
+    await service.createRoom({ hostName: "Another" });
+    expect(await store.get(code)).toBeNull();
+  });
 });
 
 describe("joining from an invite link", () => {

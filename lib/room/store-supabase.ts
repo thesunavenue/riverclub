@@ -22,14 +22,18 @@ export class SupabaseRoomStore implements RoomStore {
     throw new Error(`rooms.insert failed: ${error.code ?? "unknown"}`);
   }
 
-  async deleteInactive(beforeMs: number): Promise<number> {
-    const { data, error } = await this.db
+  async deleteInactive(idleBeforeMs: number, closedBeforeMs: number): Promise<number> {
+    const iso = (ms: number) => new Date(ms).toISOString();
+    const idle = await this.db.from(TABLE).delete().lt("last_activity_at", iso(idleBeforeMs)).select("code");
+    if (idle.error) throw new Error(`rooms.deleteInactive failed: ${idle.error.code ?? "unknown"}`);
+    const closed = await this.db
       .from(TABLE)
       .delete()
-      .lt("last_activity_at", new Date(beforeMs).toISOString())
+      .eq("state->>status", "closed")
+      .lt("last_activity_at", iso(closedBeforeMs))
       .select("code");
-    if (error) throw new Error(`rooms.deleteInactive failed: ${error.code ?? "unknown"}`);
-    return data?.length ?? 0;
+    if (closed.error) throw new Error(`rooms.deleteInactive failed: ${closed.error.code ?? "unknown"}`);
+    return (idle.data?.length ?? 0) + (closed.data?.length ?? 0);
   }
 
   async update(room: RoomState, expectedVersion: number): Promise<boolean> {

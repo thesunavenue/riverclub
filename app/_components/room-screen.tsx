@@ -131,6 +131,7 @@ export function RoomScreen({ code }: { code: string }) {
           busy={busy}
           onSit={(seat) => command({ cmd: "sit", seat })}
           onJoin={(name) => void run(() => room.join(name))}
+          onCommand={command}
         />
 
         <ActionBar

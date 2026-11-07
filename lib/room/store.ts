@@ -10,8 +10,11 @@ export interface RoomStore {
   insert(room: RoomState): Promise<boolean>;
   /** Compare-and-swap: save only if the stored version is still `expectedVersion`. */
   update(room: RoomState, expectedVersion: number): Promise<boolean>;
-  /** Delete rooms with no player activity since `beforeMs`. Returns how many were deleted. */
-  deleteInactive(beforeMs: number): Promise<number>;
+  /**
+   * Delete rooms with no activity since `idleBeforeMs`, and closed rooms not touched since
+   * `closedBeforeMs`. Returns how many were deleted.
+   */
+  deleteInactive(idleBeforeMs: number, closedBeforeMs: number): Promise<number>;
 }
 
 export class MemoryRoomStore implements RoomStore {
@@ -30,9 +33,12 @@ export class MemoryRoomStore implements RoomStore {
     return true;
   }
 
-  async deleteInactive(beforeMs: number): Promise<number> {
+  async deleteInactive(idleBeforeMs: number, closedBeforeMs: number): Promise<number> {
     let n = 0;
-    for (const [code, r] of this.rooms) if (r.lastActivityAt < beforeMs && this.rooms.delete(code)) n++;
+    for (const [code, r] of this.rooms) {
+      const before = r.status === "closed" ? closedBeforeMs : idleBeforeMs;
+      if (r.lastActivityAt < before && this.rooms.delete(code)) n++;
+    }
     return n;
   }
 

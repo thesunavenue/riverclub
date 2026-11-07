@@ -100,6 +100,40 @@ export function playWin() {
   [660, 830, 990, 1320].forEach((f, i) => tone(f, t + i * 0.08, 0.3, 0.1));
 }
 
+/**
+ * Applause for the winner (only played on the winner's own device): many short claps,
+ * each a burst of band-passed noise, thick at first and thinning out.
+ */
+export function playApplause() {
+  const a = audio();
+  if (!a || a.state !== "running") return;
+  const t0 = a.currentTime + 0.05;
+  const burst = noiseBuffer(a, 0.06);
+  const out = a.createGain();
+  out.gain.value = 0.55;
+  out.connect(a.destination);
+  const dur = 2.2;
+  for (let i = 0; i < 70; i++) {
+    // more claps early, fewer later
+    const at = t0 + dur * Math.pow(Math.random(), 1.6);
+    const src = a.createBufferSource();
+    src.buffer = burst;
+    const bp = a.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 900 + Math.random() * 1600;
+    bp.Q.value = 1.2;
+    const g = a.createGain();
+    const fade = 1 - (at - t0) / dur;
+    const vol = (0.25 + Math.random() * 0.35) * (0.3 + 0.7 * fade);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
+    src.connect(bp).connect(g).connect(out);
+    src.start(at);
+    src.stop(at + 0.07);
+  }
+}
+
 /** Say a short word, e.g. "Raise". Uses the device's voice; silently does nothing if unsupported. */
 export function say(word: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;

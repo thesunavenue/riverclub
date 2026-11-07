@@ -38,7 +38,7 @@ function expectChipsConserved(r: RoomState) {
 describe("create and join", () => {
   it("creates a room with default settings and the creator as host", () => {
     const { room, playerId } = rules.createRoom(t.ctx, { code: "ABCDEF", hostName: "  Ann  ", tokenHash: "h" });
-    expect(room.settings).toEqual({ startingStack: 1000, smallBlind: 10, bigBlind: 20, turnSeconds: 30 });
+    expect(room.settings).toEqual({ startingStack: 1000, smallBlind: 10, bigBlind: 20, turnSeconds: 15 });
     expect(room.hostId).toBe(playerId);
     expect(room.players[0]).toMatchObject({ name: "Ann", stack: 1000, seat: null });
     expect(room.status).toBe("waiting");
@@ -110,7 +110,7 @@ describe("starting and playing", () => {
     r = rules.startGame(r, t.ctx, ids[0]!);
     expect(r.status).toBe("playing");
     expect(r.hand!.handNumber).toBe(1);
-    expect(r.turnDeadline).toBe(T0 + 30_000);
+    expect(r.turnDeadline).toBe(T0 + 15_000);
     expectRoomError(() => rules.startGame(r, t.ctx, ids[0]!), "INVALID");
   });
 
@@ -121,7 +121,7 @@ describe("starting and playing", () => {
     t.now += 4000;
     r = rules.act(r, t.ctx, ids[0]!, { type: "call" }, "same-id");
     expect(turnId(r)).toBe(ids[1]);
-    expect(r.turnDeadline).toBe(T0 + 4000 + 30_000);
+    expect(r.turnDeadline).toBe(T0 + 4000 + 15_000);
     const again = rules.act(r, t.ctx, ids[0]!, { type: "call" }, "same-id");
     expect(again).toBe(r);
     expect(() => rules.act(r, t.ctx, ids[2]!, { type: "fold" }, "x")).toThrow(EngineError);
@@ -158,13 +158,13 @@ describe("turn timer", () => {
   it("folds when facing a bet, checks when free, only after the deadline", () => {
     let { r, ids } = table(t);
     r = rules.startGame(r, t.ctx, ids[0]!);
-    t.now = T0 + 29_999;
+    t.now = T0 + 14_999;
     expect(JSON.stringify(rules.tick(r, t.ctx))).toBe(JSON.stringify(r));
-    t.now = T0 + 30_000;
+    t.now = T0 + 15_000;
     r = rules.tick(r, t.ctx);
     expect(r.hand!.players[0]!.folded).toBe(true);
     r = go(r, { type: "call" }); // small blind completes
-    t.now += 30_000;
+    t.now += 15_000;
     r = rules.tick(r, t.ctx); // big blind times out with a free check
     expect(r.hand!.street).toBe("flop");
     expect(r.hand!.log.at(-1)).toMatchObject({ playerId: ids[2], type: "check" });
