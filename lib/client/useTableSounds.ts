@@ -23,7 +23,7 @@ export function useTableSounds(view: RoomView | null, opts: { sound: boolean; vo
       for (const at of ev.boardAt) playSwish(at + 0.05);
       if (ev.action === "check") playKnock();
       else if (ev.action === "fold") playSwish(0);
-      else if (ev.action === "chips") playChips();
+      else if (ev.action) playChips(ev.action);
       if (ev.myTurn) setTimeout(playYourTurn, 350);
     }
     if (voice && ev.word) say(ev.word);

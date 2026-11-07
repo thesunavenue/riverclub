@@ -9,7 +9,7 @@ export interface SoundEvents {
   /** Seconds (from now) at which a board card is revealed. */
   boardAt: number[];
   /** Sound for the newest action. */
-  action: "check" | "fold" | "chips" | null;
+  action: "check" | "fold" | "call" | "raise" | "allin" | null;
   /** Word to say for the newest action. */
   word: string | null;
   /** My turn just started. */
@@ -34,7 +34,15 @@ export function tableSoundEvents(prev: RoomView | null, view: RoomView | null): 
 
   const fresh = h.log.slice(ph ? ph.log.length : 0).filter((e) => e.type !== "small_blind" && e.type !== "big_blind");
   const last = fresh.at(-1);
-  const action = !last ? null : last.type === "check" ? "check" : last.type === "fold" ? "fold" : "chips";
+  const action: SoundEvents["action"] = !last
+    ? null
+    : last.type === "check" || last.type === "fold"
+      ? last.type
+      : last.allIn
+        ? "allin"
+        : last.type === "bet" || last.type === "raise"
+          ? "raise"
+          : "call";
   const word = !last ? null : last.allIn ? "All in" : WORDS[last.type] ?? null;
 
   const myTurn = !!h.legal && !(ph?.legal && ph.log.length === h.log.length);

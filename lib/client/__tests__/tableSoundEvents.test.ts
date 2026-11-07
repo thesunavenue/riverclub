@@ -87,3 +87,33 @@ describe("applause on the winner's device only", () => {
     expect(tableSoundEvents(a, await service.view(code, null))!.winInMs).toBeNull();
   });
 });
+
+describe("action sounds", () => {
+  it("check taps, call pushes chips, raise pushes a heavier stack, all-in the heaviest", async () => {
+    const { code, all, toAct } = await threePlaying();
+    const step = async (action: Parameters<RoomService["act"]>[2], id: string) => {
+      const before = await service.view(code, all[0]!.token);
+      const p = await toAct();
+      await service.act(code, p.token, action, id);
+      const after = await service.view(code, all[0]!.token);
+      return tableSoundEvents(before, after)!.action;
+    };
+    expect(await step({ type: "call" }, "c1")).toBe("call");
+    expect(await step({ type: "raise", to: 60 }, "r1")).toBe("raise");
+    expect(await step({ type: "raise", to: 1000 }, "r2")).toBe("allin");
+    expect(await step({ type: "fold" }, "f1")).toBe("fold");
+  });
+
+  it("check after the flop is a tap", async () => {
+    const { code, all, toAct } = await threePlaying();
+    for (const [a, id] of [[{ type: "call" }, "c1"], [{ type: "call" }, "c2"], [{ type: "check" }, "k1"]] as const) {
+      const p = await toAct();
+      await service.act(code, p.token, a, id);
+    }
+    const before = await service.view(code, all[0]!.token);
+    const p = await toAct();
+    await service.act(code, p.token, { type: "check" }, "k2");
+    const after = await service.view(code, all[0]!.token);
+    expect(tableSoundEvents(before, after)!.action).toBe("check");
+  });
+});
