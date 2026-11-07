@@ -247,6 +247,9 @@ export function createHandlers(getService: () => RoomService, opts: HandlerOptio
         case "setAvatar":
           view = await s.setAvatar(c, token, str(b.avatar, "avatar", 16));
           break;
+        case "show":
+          view = await s.showCards(c, token, b.cards);
+          break;
         case "chat":
           view = await s.sendChat(c, token, str(b.text, "text", 400));
           break;

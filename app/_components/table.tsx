@@ -1,5 +1,7 @@
 "use client";
+import { useRef, type CSSProperties } from "react";
 import type { HandView, LogEntry } from "@/lib/engine";
+import { boardPlan, type CardReveal } from "@/lib/client/boardPlan";
 import type { RoomPlayerView, RoomView } from "@/lib/room";
 import type { StringKey } from "@/lib/i18n/strings";
 import { Card, TimerRing } from "./bits";
@@ -81,6 +83,22 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
       const won = (hand.result.payouts[hp.id] ?? 0) - hp.committed;
       if (won > 0) gains.set(hp.id, won);
     }
+  // Board reveal plan: worked out once when new board cards arrive (none on first load).
+  const plan = useRef<{ hand: number; len: number; cards: Map<number, CardReveal>; endsAt: number } | null>(null);
+  if (hand) {
+    const p = plan.current;
+    if (!p || p.hand !== hand.handNumber) {
+      const fresh = p !== null; // a new hand while watching (not the first render)
+      plan.current = { hand: hand.handNumber, len: hand.board.length, cards: new Map(), endsAt: 0 };
+      if (fresh && hand.board.length > 0) Object.assign(plan.current, boardPlan(0, hand.board.length));
+    } else if (hand.board.length > p.len) {
+      plan.current = { hand: hand.handNumber, len: hand.board.length, ...boardPlan(p.len, hand.board.length) };
+    }
+  }
+  const reveal = plan.current?.hand === hand?.handNumber ? plan.current : null;
+  // Results wait until the last board card is face up.
+  const resultDelay: CSSProperties = { animationDelay: `${reveal?.endsAt ?? 0}s` };
+
   const msLeft = active && view.turnDeadline ? Math.max(0, view.turnDeadline - now) : 0;
   const turnLeft = msLeft / (view.settings.turnSeconds * 1000);
 
@@ -107,11 +125,8 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
         <div className="board">
           {[0, 1, 2, 3, 4].map((i) => {
             const c = hand?.board[i];
-            return (
-              <span key={c ? `${hand!.handNumber}-${c}` : `slot-${i}`} className={c ? "anim-flip" : ""} style={{ animationDelay: `${(i % 3) * 90}ms` }}>
-                <Card card={c} />
-              </span>
-            );
+            if (!c) return <Card key={`slot-${i}`} card={undefined} />;
+            return <BoardCard key={`${hand!.handNumber}-${c}`} card={c} reveal={reveal?.cards.get(i)} />;
           })}
         </div>
         {active && hand.pot > 0 && (
@@ -119,8 +134,8 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
             <Amount className="pot" value={hand.pot} prefix={`${t("pot", { n: "" }).trim()} `} />
           </span>
         )}
-        {hand?.result && view.status !== "finished" && (
-          <div className="fade-late" key={`res-${hand.handNumber}`}>
+        {hand?.result && (
+          <div className="fade-late" key={`res-${hand.handNumber}`} style={resultDelay}>
             <Result hand={hand} players={view.players} />
           </div>
         )}
@@ -132,7 +147,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
       {me && view.status === "waiting" && <WaitingCard view={view} busy={busy} onCommand={onCommand} />}
 
       {/* game over */}
-      {view.status === "finished" && <GameOver view={view} />}
+      {view.status === "finished" && <GameOver view={view} delay={reveal?.endsAt ?? 0} />}
 
       {/* seats */}
       {Array.from({ length: 9 }, (_, seat) => {
@@ -161,15 +176,33 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
           hp?.folded || p.out ? "folded" : "",
           p.away ? "away" : "",
           hand?.result && winners.has(p.id) ? "winner" : "",
+          active && hp?.allIn ? "allin" : "",
         ].join(" ");
         const label = actionLabel(last.get(p.id));
         return (
           <div key={seat} className={cls} style={{ left: `${x}%`, top: `${y}%` }}>
-            {!isMe && hp && !hp.folded && (hp.hole || active) && (
-              <div className="seat-cards anim-deal" key={`deal-${hand?.handNumber}`}>
-                <Card card={hp.hole?.[0] ?? null} size="sm" />
-                <Card card={hp.hole?.[1] ?? null} size="sm" />
+            {!isMe && p.shown ? (
+              <div className="seat-cards shown" key={`shown-${hand?.handNumber}-${p.shown.join()}`}>
+                <span className="anim-flip"><Card card={p.shown[0]} size="sm" /></span>
+                <span className="anim-flip" style={{ animationDelay: "90ms" }}><Card card={p.shown[1]} size="sm" /></span>
               </div>
+            ) : (
+              !isMe &&
+              hp &&
+              !hp.folded &&
+              (hp.hole || active) && (
+                <div className="seat-cards anim-deal" key={`deal-${hand?.handNumber}`}>
+                  <Card card={hp.hole?.[0] ?? null} size="sm" />
+                  <Card card={hp.hole?.[1] ?? null} size="sm" />
+                </div>
+              )
+            )}
+            {active && hp?.allIn && (
+              <span className="flames" aria-hidden>
+                <i>🔥</i>
+                <i>🔥</i>
+                <i>🔥</i>
+              </span>
             )}
             <div className="avatar">
               <span className="emoji" aria-hidden>
@@ -187,7 +220,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
             </div>
             <div className="name">{p.name}</div>
             {gains.has(p.id) && (
-              <span key={`gain-${hand?.handNumber}`} className="gain num">
+              <span key={`gain-${hand?.handNumber}`} className="gain num" style={resultDelay}>
                 +{bbText(gains.get(p.id)!, view.settings.bigBlind)}
               </span>
             )}
@@ -219,7 +252,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
           })}
 
       {/* my cards, large */}
-      {mine?.hole && view.status !== "finished" && (
+      {mine?.hole && (
         <div className="my-cards" key={`mine-${hand?.handNumber}`}>
           <span className="anim-deal">
             <Card card={mine.hole[0]} size="lg" dim={mine.folded} />
@@ -231,6 +264,27 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
         </div>
       )}
     </div>
+  );
+}
+
+/** A board card with its reveal: flop slides out, turn and river flip after a pause. */
+function BoardCard({ card, reveal }: { card: string; reveal?: CardReveal }) {
+  if (!reveal) return <Card card={card} />;
+  if (reveal.kind === "spread")
+    return (
+      <span className="anim-spread" style={{ "--i": reveal.i, animationDelay: `${reveal.at}s` } as CSSProperties}>
+        <Card card={card} />
+      </span>
+    );
+  return (
+    <span className="flip-slow" style={{ "--at": `${reveal.at}s` } as CSSProperties}>
+      <span className="flip-back">
+        <Card card={null} />
+      </span>
+      <span className="flip-front">
+        <Card card={card} />
+      </span>
+    </span>
   );
 }
 
@@ -252,11 +306,11 @@ function Result({ hand, players }: { hand: HandView; players: RoomPlayerView[] }
   );
 }
 
-function GameOver({ view }: { view: RoomView }) {
+function GameOver({ view, delay }: { view: RoomView; delay: number }) {
   const { t } = useLang();
   const winner = view.standings.find((s) => s.place === 1);
   return (
-    <div className="overlay-card">
+    <div className="overlay-card late-in" style={{ animationDelay: `${delay + 1.2}s` }}>
       <div className="small muted">{t("gameOver")}</div>
       <div className="trophy" aria-hidden>
         🏆

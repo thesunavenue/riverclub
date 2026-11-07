@@ -197,3 +197,43 @@ describe("joining from an invite link", () => {
     expect(late.view.me!.seat).toBeNull();
   });
 });
+
+describe("showing cards for fun", () => {
+  it("a folded player's shown card stays hidden until the hand ends, then only that card is seen", async () => {
+    const { code, host, bo, cy } = await threeSeated();
+    await service.startGame(code, host.token);
+    const raw = (await store.get(code))!;
+    const toAct = raw.hand!.players[raw.hand!.toAct!]!.id;
+    const first = [host, bo, cy].find((p) => p.playerId === toAct)!;
+    const others = [host, bo, cy].filter((p) => p !== first);
+    const [c0, c1] = raw.hand!.players.find((p) => p.id === first.playerId)!.hole;
+
+    // still in the hand: not allowed
+    await expectRoomError(service.showCards(code, first.token, [0]), "INVALID");
+    await service.act(code, first.token, { type: "fold" }, "f1");
+    await service.showCards(code, first.token, [0]);
+    for (const o of others) {
+      const json = JSON.stringify(await service.view(code, o.token));
+      expect(json).not.toContain(`"${c0}"`);
+      expect(json).not.toContain(`"${c1}"`);
+    }
+
+    // next player folds: hand over, the last one wins without a showdown
+    const r2 = (await store.get(code))!;
+    const next = others.find((o) => o.playerId === r2.hand!.players[r2.hand!.toAct!]!.id)!;
+    await service.act(code, next.token, { type: "fold" }, "f2");
+    const seen = await service.view(code, others[0]!.token);
+    expect(seen.players.find((p) => p.id === first.playerId)!.shown).toEqual([c0, null]);
+    expect(JSON.stringify(seen)).not.toContain(`"${c1}"`);
+    const spectator = await service.view(code, null);
+    expect(spectator.players.find((p) => p.id === first.playerId)!.shown).toEqual([c0, null]);
+  });
+
+  it("rejects bad choices", async () => {
+    const { code, host } = await threeSeated();
+    await service.startGame(code, host.token);
+    await service.closeRoom(code, host.token).catch(() => {});
+    const h2 = await service.createRoom({ hostName: "Zed" });
+    await expectRoomError(service.showCards(h2.view.code, h2.token, [0]), "INVALID"); // no hand
+  });
+});

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { Action } from "@/lib/engine";
 import type { RoomView } from "@/lib/room";
-import { ConfirmButton } from "./bits";
+import { Card, ConfirmButton } from "./bits";
 import { useChips } from "./chips";
 import { useLang } from "./lang";
 
@@ -149,7 +149,46 @@ export function ActionBar({ view, now, busy, onAct, onCommand, onLeave }: Props)
     );
   }
 
-  // 4. Everything else: one clear next step or a status note.
+  // 4. Everything else: one clear next step or a status note,
+  //    plus "show your cards" after folding or after a hand you didn't have to show.
+  const myHp = hand?.players.find((p) => p.id === me.id);
+  const canShow =
+    !!hand &&
+    !!myHp?.hole &&
+    view.status === "playing" &&
+    (myHp.folded || hand.street === "complete") &&
+    !hand.result?.hands[me.id];
+  const handOver = hand?.street === "complete";
+  const shownNow = me.shown ?? [null, null];
+  const [pick0, pick1] = [!!shownNow[0], !!shownNow[1]];
+  const showRow = canShow ? (
+    <div style={{ display: "grid", gap: 4 }}>
+      <div className="show-row">
+        <span className="label">{t("showOff")}</span>
+        {[0, 1].map((i) => (
+          <button
+            key={i}
+            className="btn btn-sm"
+            disabled={busy}
+            aria-pressed={i === 0 ? pick0 : pick1}
+            onClick={() => onCommand({ cmd: "show", cards: [i] })}
+          >
+            <Card card={myHp!.hole![i]} size="sm" />
+          </button>
+        ))}
+        <button
+          className="btn btn-sm"
+          disabled={busy}
+          aria-pressed={pick0 && pick1}
+          onClick={() => onCommand({ cmd: "show", cards: [0, 1] })}
+        >
+          {t("showBoth")}
+        </button>
+      </div>
+      {!handOver && <div className="small muted" style={{ textAlign: "center" }}>{t("showAfterHand")}</div>}
+    </div>
+  ) : null;
+
   const seatedWithChips = view.players.filter((p) => p.seat !== null && p.stack > 0 && !p.away).length;
   let content: React.ReactNode;
   if (me.seat === null) content = <div className="note">{t("pickSeat")}</div>;
@@ -181,6 +220,7 @@ export function ActionBar({ view, now, busy, onAct, onCommand, onLeave }: Props)
 
   return (
     <div className="bar">
+      {showRow}
       <div className="bar-row">{content}</div>
     </div>
   );

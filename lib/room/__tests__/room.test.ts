@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { EngineError, type Action } from "../../engine";
 import * as rules from "../room";
-import { AVATARS, HAND_PAUSE_MS, RoomError, type RoomState } from "../types";
+import { AVATARS, HAND_PAUSE_MS, RUNOUT_STREET_MS, RoomError, type RoomState } from "../types";
 import { historyFor, roomViewFor } from "../view";
 import { nextActionId, T0, table, TestCtx, turnId } from "./helpers";
 
@@ -268,7 +268,9 @@ describe("elimination and end of game", () => {
     expect(r.status).toBe("playing");
     expect(r.players[1]!.stack).toBe(0);
     expect(roomViewFor(r, ids[1]!, t.now).me!.out).toBe(true);
-    t.now += HAND_PAUSE_MS;
+    // all-in preflop: the board is run out, so the pause is longer (3 streets)
+    expect(r.nextHandAt).toBe(t.now + HAND_PAUSE_MS + 3 * RUNOUT_STREET_MS);
+    t.now = r.nextHandAt!;
     r = rules.tick(r, t.ctx);
     expect(r.hand!.players.map((p) => p.id)).toEqual([ids[0], ids[2]]);
   });

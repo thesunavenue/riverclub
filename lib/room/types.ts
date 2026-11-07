@@ -16,6 +16,8 @@ export const DEFAULT_SETTINGS: RoomSettings = {
 
 /** Pause between hands so people can see the showdown. */
 export const HAND_PAUSE_MS = 5000;
+/** Extra pause per board street dealt with no betting (all-in run-out), so clients can reveal it slowly. */
+export const RUNOUT_STREET_MS = 1200;
 export const MAX_ROOM_PLAYERS = 30;
 export const MAX_NAME_LENGTH = 20;
 export const RECENT_ACTION_IDS = 100;
@@ -116,6 +118,11 @@ export interface RoomState {
   history?: HistoryEntry[];
   /** Last chat messages, oldest first. */
   chat?: ChatMessage[];
+  /**
+   * Cards players chose to show after folding or after the hand (for fun). Revealed to others
+   * only once the hand is complete. Index 0/1 = first/second hole card.
+   */
+  shows?: { hand: number; cards: Record<string, [boolean, boolean]> };
   /** Chips ever given out in this room (starting stacks; reset on "play again"). For the invariant check. */
   chipsIssued: number;
 }

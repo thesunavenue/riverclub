@@ -135,6 +135,9 @@ export class RoomService {
   closeRoom(code: string, token: string) {
     return this.mutate(code, token, (r, ctx, me) => rules.closeRoom(r, ctx, me));
   }
+  showCards(code: string, token: string, which: unknown) {
+    return this.mutate(code, token, (r, ctx, me) => rules.showCards(r, ctx, me, which));
+  }
   sendChat(code: string, token: string, text: string) {
     return this.mutate(code, token, (r, ctx, me) => rules.sendChat(r, ctx, me, text));
   }

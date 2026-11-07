@@ -19,6 +19,7 @@ import {
   MAX_MISSED_TURNS,
   DEFAULT_SETTINGS,
   HAND_PAUSE_MS,
+  RUNOUT_STREET_MS,
   MAX_CHAT_LENGTH,
   MAX_CHAT_MESSAGES,
   MAX_NAME_LENGTH,
@@ -96,6 +97,16 @@ function begin(room: RoomState, ctx: RoomCtx): RoomState {
  * Bring the room to a stable point: auto-act for players who are away or leaving,
  * pay out finished hands, start the next hand when it is time, and set the turn timer.
  */
+const STREET_ORDER = ["preflop", "flop", "turn", "river"];
+
+/** Board streets dealt after the last betting action (an all-in run-out). */
+export function runoutStreets(hand: HandState): number {
+  const last = [...hand.log].reverse().find((e) => e.type !== "small_blind" && e.type !== "big_blind");
+  const lastIdx = STREET_ORDER.indexOf(last?.street ?? "preflop");
+  const boardIdx = hand.board.length >= 5 ? 3 : hand.board.length === 4 ? 2 : hand.board.length === 3 ? 1 : 0;
+  return Math.max(0, boardIdx - lastIdx);
+}
+
 function settle(r: RoomState, ctx: RoomCtx): RoomState {
   for (let guard = 0; guard < 1000; guard++) {
     const hand = activeHand(r);
@@ -141,7 +152,7 @@ function settle(r: RoomState, ctx: RoomCtx): RoomState {
           p.leaving = false;
         }
       }
-      r.nextHandAt = ctx.now + HAND_PAUSE_MS;
+      r.nextHandAt = ctx.now + HAND_PAUSE_MS + runoutStreets(r.hand) * RUNOUT_STREET_MS;
       // Out of chips means out of the game. One player left with chips: game over.
       const alive = r.players.filter((p) => p.seat !== null && p.stack > 0 && !p.banned);
       if (r.status === "playing" && alive.length <= 1) {
@@ -161,6 +172,7 @@ function settle(r: RoomState, ctx: RoomCtx): RoomState {
       r.buttonSeat,
     );
     r.handCount += 1;
+    r.shows = undefined;
     r.hand = startHand({
       handNumber: r.handCount,
       players: eligible.map((p) => ({ id: p.id, seat: p.seat!, stack: p.stack })),
@@ -381,6 +393,28 @@ export function closeRoom(room: RoomState, ctx: RoomCtx, hostId: string): RoomSt
   r.hand = null;
   r.history = [];
   r.chat = [];
+  return r;
+}
+
+// ---------- Showing cards for fun ----------
+
+/**
+ * Show one or both hole cards after folding, or after the hand ended without a showdown for you.
+ * Others see them only once the hand is complete, so showing never changes how a hand is played.
+ */
+export function showCards(room: RoomState, ctx: RoomCtx, playerId: string, which: unknown): RoomState {
+  const r = begin(room, ctx);
+  player(r, playerId);
+  const hand = r.hand;
+  const hp = hand?.players.find((p) => p.id === playerId);
+  if (!hand || !hp) throw new RoomError("INVALID", "You are not in this hand");
+  if (hand.street !== "complete" && !hp.folded) throw new RoomError("INVALID", "Fold or finish the hand first");
+  if (hand.result?.hands[playerId]) throw new RoomError("INVALID", "Already shown at showdown");
+  if (!Array.isArray(which) || which.length === 0 || which.length > 2 || !which.every((i) => i === 0 || i === 1))
+    throw new RoomError("INVALID", "Choose card 0, 1 or both");
+  if (!r.shows || r.shows.hand !== hand.handNumber) r.shows = { hand: hand.handNumber, cards: {} };
+  const cur = r.shows.cards[playerId] ?? [false, false];
+  r.shows.cards[playerId] = [cur[0] || which.includes(0), cur[1] || which.includes(1)];
   return r;
 }
 

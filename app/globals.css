@@ -122,7 +122,7 @@ details[open] > summary::before { content: "▾ "; }
   background: var(--surface2); border: 2px solid var(--line); position: relative; font-size: 17px;
 }
 .seat.turn .avatar { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.seat.folded { opacity: 0.45; }
+.seat.folded > :not(.seat-cards.shown) { opacity: 0.45; }
 .seat.away .avatar { border-style: dashed; }
 .seat.winner .avatar { border-color: var(--ok); box-shadow: 0 0 0 4px rgba(114, 197, 155, 0.2); }
 .seat .name { font-size: 12px; max-width: 76px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -259,8 +259,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 @media (min-height: 760px) {
   .avatar { width: 52px; height: 52px; }
 }
+/* "Reduce motion": drop the big movements (flying, sliding, pulsing); keep fades and card flips. */
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  .anim-deal, .anim-spread, .anim-chip, .anim-pop, .anim-pulse, .empty-seat.can-sit,
+  .seat.turn .avatar, .seat.winner .avatar, .seat.allin .avatar, .flames i { animation: none !important; }
 }
 
 /* ---------- table looks (per device). Only colours change. ---------- */
@@ -410,3 +412,43 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 .deck-tint .card { color: #fff !important; }
 .deck-tint .card.s-h { background: #d0363b !important; } .deck-tint .card.s-d { background: #2569c2 !important; }
 .deck-tint .card.s-c { background: #23844a !important; } .deck-tint .card.s-s { background: #2b3235 !important; }
+
+/* ---------- board reveal ---------- */
+/* flop: the three cards slide out from the first slot */
+.anim-spread { display: inline-block; position: relative; animation: spreadOut 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; z-index: calc(3 - var(--i)); }
+@keyframes spreadOut {
+  0% { transform: translateX(calc(var(--i) * (-100% - 4px))) translateY(-6px) rotate(-3deg); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+/* turn and river: face down first, then a slow flip */
+.flip-slow { display: inline-block; position: relative; perspective: 500px; }
+.flip-slow .flip-back { position: absolute; inset: 0; animation: dealIn 0.3s ease-out both, flipAway 0.22s ease-in calc(var(--at) - 0.22s) forwards; }
+.flip-slow .flip-front { display: inline-block; animation: flipIn 0.32s ease-out var(--at) both; }
+@keyframes flipAway { to { transform: rotateY(90deg); opacity: 0; } }
+
+/* ---------- all-in: small flames around the avatar ---------- */
+.seat.allin .avatar { border-color: #ff8a3d; animation: fireGlow 0.45s ease-in-out infinite alternate; }
+@keyframes fireGlow {
+  from { box-shadow: 0 0 0 3px rgba(255, 120, 40, 0.55), 0 0 14px 2px rgba(255, 90, 20, 0.45); }
+  to { box-shadow: 0 0 0 4px rgba(255, 170, 60, 0.7), 0 0 22px 6px rgba(255, 70, 20, 0.55); }
+}
+.flames { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); display: flex; gap: 0; pointer-events: none; z-index: 4; }
+.flames i { font-style: normal; font-size: 15px; line-height: 1; display: inline-block; transform-origin: 50% 100%; animation: flicker 0.5s ease-in-out infinite alternate; filter: drop-shadow(0 0 4px rgba(255, 120, 30, 0.8)); }
+.flames i:nth-child(1) { font-size: 12px; margin-top: 5px; animation-delay: -0.2s; }
+.flames i:nth-child(2) { font-size: 17px; animation-duration: 0.42s; }
+.flames i:nth-child(3) { font-size: 12px; margin-top: 5px; animation-delay: -0.35s; }
+@keyframes flicker {
+  from { transform: scale(0.9, 0.85) rotate(-6deg); opacity: 0.85; }
+  to { transform: scale(1.08, 1.15) rotate(5deg); opacity: 1; }
+}
+
+/* ---------- shown cards ---------- */
+.seat-cards.shown { filter: drop-shadow(0 0 6px var(--accent-soft)); }
+.show-row { display: flex; align-items: center; gap: 6px; justify-content: center; }
+.show-row .label { font-size: 13px; color: var(--muted); margin-right: 2px; }
+.show-row .btn { min-height: 40px; font-size: 14px; padding: 0 10px; display: inline-flex; align-items: center; gap: 4px; }
+.show-row .btn .card { font-size: 8px; }
+.show-row .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.late-in { animation: lateIn 0.4s ease-out both; }
+@keyframes lateIn { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }

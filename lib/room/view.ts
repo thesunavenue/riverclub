@@ -1,4 +1,4 @@
-import { viewFor, type HandView } from "../engine";
+import { viewFor, type Card, type HandView } from "../engine";
 import { activeHand } from "./room";
 import type { ChatMessage, RoomSettings, RoomState } from "./types";
 
@@ -14,6 +14,8 @@ export interface RoomPlayerView {
   out: boolean;
   isHost: boolean;
   inHand: boolean;
+  /** Cards this player chose to show after the hand ended (null = kept hidden). */
+  shown: [Card | null, Card | null] | null;
 }
 
 /** What one client receives. Built field by field: no token hashes, no hidden cards, no deck. */
@@ -40,6 +42,16 @@ export interface RoomView {
 export function roomViewFor(r: RoomState, viewerId: string | null, now: number): RoomView {
   const hand = activeHand(r);
   const live = new Map(hand?.players.map((p) => [p.id, p]) ?? []);
+  // Shown cards are revealed to others only after the hand is complete (you always see your own choice).
+  const cur = r.hand && r.shows?.hand === r.hand.handNumber ? r.hand : null;
+  const done = cur?.street === "complete";
+  const shownOf = (id: string): RoomPlayerView["shown"] => {
+    if (!cur || (!done && id !== viewerId)) return null;
+    const pick = r.shows!.cards[id];
+    const hole = cur.players.find((p) => p.id === id)?.hole;
+    if (!pick || !hole) return null;
+    return [pick[0] ? hole[0]! : null, pick[1] ? hole[1]! : null];
+  };
   const players: RoomPlayerView[] = r.players
     // Removed players disappear once they leave their seat.
     .filter((p) => !p.banned || p.seat !== null)
@@ -54,6 +66,7 @@ export function roomViewFor(r: RoomState, viewerId: string | null, now: number):
       out: p.seat !== null && p.stack === 0 && !live.has(p.id) && (r.status === "playing" || r.status === "finished"),
       isHost: p.id === r.hostId,
       inHand: live.has(p.id),
+      shown: shownOf(p.id),
     }));
   const viewer = r.players.find((p) => p.id === viewerId && !p.banned);
   return {
