@@ -240,7 +240,7 @@ function newPlayer(id: string, name: string, tokenHash: string, stack: number): 
 export function join(
   room: RoomState,
   ctx: RoomCtx,
-  input: { name: string; tokenHash: string },
+  input: { name: string; tokenHash: string; autoSit?: boolean },
 ): { room: RoomState; playerId: string } {
   const existing = room.players.find((p) => p.tokenHash === input.tokenHash);
   if (existing) {
@@ -256,7 +256,19 @@ export function join(
   const id = ctx.newId();
   r.players.push({ ...newPlayer(id, name, input.tokenHash, r.settings.startingStack), avatar: pickAvatar(r.players, ctx) });
   r.chipsIssued += r.settings.startingStack;
-  return { room: r, playerId: id };
+  if (!input.autoSit || r.status === "finished") return { room: r, playerId: id };
+  const seat = freeSeat(r);
+  if (seat === null) return { room: r, playerId: id }; // table full: watch until a seat frees
+  r.players.at(-1)!.seat = seat;
+  return { room: settle(r, ctx), playerId: id };
+}
+
+/** Seats filled in an order that spreads players around the table. */
+const SEAT_ORDER = [0, 4, 2, 6, 1, 5, 3, 7, 8].filter((s) => s < MAX_SEATS);
+
+function freeSeat(r: RoomState): number | null {
+  const taken = new Set(r.players.map((p) => p.seat));
+  return SEAT_ORDER.find((s) => !taken.has(s)) ?? null;
 }
 
 // ---------- Seats ----------

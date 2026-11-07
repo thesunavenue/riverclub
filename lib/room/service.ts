@@ -78,13 +78,13 @@ export class RoomService {
    * Join a room. If `token` belongs to a player here, that player is returned (reconnect).
    * Tokens are always created by the server; an unknown token is ignored.
    */
-  async join(code: string, input: { name: string; token?: string | null }): Promise<JoinResult> {
+  async join(code: string, input: { name: string; token?: string | null; autoSit?: boolean }): Promise<JoinResult> {
     const room = await this.load(code);
     const known = input.token ? room.players.find((p) => p.tokenHash === hashToken(input.token!)) : null;
     const token = known ? input.token! : this.newToken();
     const tokenHash = hashToken(token);
     const { playerId, view } = await this.run(code, null, (r, ctx) =>
-      rules.join(r, ctx, { name: input.name, tokenHash }),
+      rules.join(r, ctx, { name: input.name, tokenHash, autoSit: input.autoSit }),
     );
     return { token, playerId: playerId!, view };
   }

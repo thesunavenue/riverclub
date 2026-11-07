@@ -196,11 +196,15 @@ export function createHandlers(getService: () => RoomService, opts: HandlerOptio
       return json({ view });
     }),
 
-    /** POST /api/rooms/:code/join {name}. Send your saved token as Bearer to reconnect. */
+    /** POST /api/rooms/:code/join {name, autoSit?}. Send your saved token as Bearer to reconnect. */
     joinRoom: wrap(async (req: Request, code: string) => {
       const token = bearer(req);
       const body = await readJson(req);
-      const res = await getService().join(roomCode(code), { name: str(body.name, "name", 50), token });
+      const res = await getService().join(roomCode(code), {
+        name: str(body.name, "name", 50),
+        token,
+        autoSit: body.autoSit === true,
+      });
       return json({ token: res.token, playerId: res.playerId, view: res.view });
     }),
 

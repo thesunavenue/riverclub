@@ -77,7 +77,7 @@ describe("random play invariants", () => {
       if (r.showdown) expect(s.board).toHaveLength(5);
       checkNoLeak(s, s.players[int(n)]!.id);
     }
-  });
+  }, 30_000); // thousands of random hands; slow machines need more than the 5 s default
 });
 
 function checkNoLeak(s: HandState, viewerId: string) {

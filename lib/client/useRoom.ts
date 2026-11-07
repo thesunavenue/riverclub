@@ -76,7 +76,11 @@ export function useRoom(code: string) {
 
   const refresh = useCallback(async () => {
     try {
-      accept((await api.getRoom(code, tokenRef.current)).view);
+      const t = tokenRef.current;
+      const res = await api.getRoom(code, t);
+      // Joined (or lost the token) while this was in flight: the answer is for someone else.
+      if (tokenRef.current !== t) return;
+      accept(res.view);
     } catch (e) {
       handleError(e);
     }
@@ -141,8 +145,9 @@ export function useRoom(code: string) {
     const id = setTimeout(async () => {
       try {
         const before = viewRef.current?.version;
-        const res = await api.tick(code, tokenRef.current);
-        accept(res.view);
+        const t = tokenRef.current;
+        const res = await api.tick(code, t);
+        if (tokenRef.current === t) accept(res.view);
         if (res.view.version === before) setTimeout(() => setTickNonce((n) => n + 1), 1000);
       } catch (e) {
         handleError(e);

@@ -43,7 +43,7 @@ export const api = {
     call<JoinResponse & { code: string }>("/api/rooms", { method: "POST", body: { hostName, settings } }),
   getRoom: (code: string, token: string | null) => call<{ view: RoomView }>(`/api/rooms/${code}`, { token }),
   join: (code: string, name: string, token: string | null) =>
-    call<JoinResponse>(`/api/rooms/${code}/join`, { method: "POST", token, body: { name } }),
+    call<JoinResponse>(`/api/rooms/${code}/join`, { method: "POST", token, body: { name, autoSit: true } }),
   command: (code: string, token: string, body: Record<string, unknown>) =>
     call<{ view: RoomView }>(`/api/rooms/${code}/command`, { method: "POST", token, body }),
   history: (code: string, token: string) => call<{ hands: HistoryItem[] }>(`/api/rooms/${code}/history`, { token }),

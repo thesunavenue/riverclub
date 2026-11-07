@@ -125,14 +125,19 @@ export function RoomScreen({ code }: { code: string }) {
           {status}
         </div>
 
-        <Table view={view} now={now} onSit={(seat) => command({ cmd: "sit", seat })} />
+        <Table
+          view={view}
+          now={now}
+          busy={busy}
+          onSit={(seat) => command({ cmd: "sit", seat })}
+          onJoin={(name) => void run(() => room.join(name))}
+        />
 
         <ActionBar
           view={view}
           now={now}
           busy={busy}
           onAct={act}
-          onJoin={(name) => void run(() => room.join(name))}
           onCommand={command}
           onLeave={() => void leave()}
         />

@@ -2,7 +2,8 @@
 import type { HandView, LogEntry } from "@/lib/engine";
 import type { RoomPlayerView, RoomView } from "@/lib/room";
 import type { StringKey } from "@/lib/i18n/strings";
-import { Card, ShareButtons, TimerRing } from "./bits";
+import { Card, TimerRing } from "./bits";
+import { JoinCard, WaitingCard } from "./join-card";
 import { Amount, useChips } from "./chips";
 import { useLang } from "./lang";
 import { winnings } from "./winnings";
@@ -43,7 +44,15 @@ function lastActions(hand: HandView): Map<string, LogEntry> {
   return m;
 }
 
-export function Table({ view, now, onSit }: { view: RoomView; now: number; onSit: (seat: number) => void }) {
+interface TableProps {
+  view: RoomView;
+  now: number;
+  busy: boolean;
+  onSit: (seat: number) => void;
+  onJoin: (name: string) => void;
+}
+
+export function Table({ view, now, busy, onSit, onJoin }: TableProps) {
   const { t } = useLang();
   const { fmt } = useChips();
   const me = view.me;
@@ -106,14 +115,10 @@ export function Table({ view, now, onSit }: { view: RoomView; now: number; onSit
         {hand?.result && view.status !== "finished" && <Result hand={hand} players={view.players} />}
       </div>
 
-      {/* invite card before the first hand */}
-      {view.status === "waiting" && (
-        <div className="overlay-card">
-          <div className="small muted">{t("invite")}</div>
-          <div className="big-code">{view.code}</div>
-          <ShareButtons code={view.code} showLink />
-        </div>
-      )}
+      {/* a guest from an invite link: name, then straight to a seat */}
+      {!me && view.status !== "finished" && <JoinCard view={view} busy={busy} onJoin={onJoin} />}
+      {/* before the first hand: invite link for the host, "you're in" for friends */}
+      {me && view.status === "waiting" && <WaitingCard view={view} />}
 
       {/* game over */}
       {view.status === "finished" && <GameOver view={view} />}

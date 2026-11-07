@@ -148,3 +148,37 @@ describe("cleanup", () => {
     expect(await store.get(fresh.view.code)).not.toBeNull();
   });
 });
+
+describe("joining from an invite link", () => {
+  it("autoSit puts each guest in a free seat, spread around the table", async () => {
+    const host = await service.createRoom({ hostName: "Ann" });
+    const code = host.view.code;
+    await service.sit(code, host.token, 0);
+    const bo = await service.join(code, { name: "Bo", autoSit: true });
+    const cy = await service.join(code, { name: "Cy", autoSit: true });
+    expect(bo.view.me!.seat).toBe(4);
+    expect(cy.view.me!.seat).toBe(2);
+    // reconnecting keeps the seat
+    const again = await service.join(code, { name: "Bo", token: bo.token, autoSit: true });
+    expect(again.view.me!.seat).toBe(4);
+  });
+
+  it("a guest joining mid-game is dealt in from the next hand", async () => {
+    const { code, host } = await threeSeated();
+    await service.startGame(code, host.token);
+    const dee = await service.join(code, { name: "Dee", autoSit: true });
+    expect(dee.view.me!.seat).not.toBeNull();
+    expect(dee.view.hand!.players.some((p) => p.id === dee.playerId)).toBe(false);
+    const raw = (await store.get(code))!;
+    expect(raw.chipsIssued).toBe(4 * raw.settings.startingStack);
+  });
+
+  it("when all 9 seats are taken the guest watches", async () => {
+    const host = await service.createRoom({ hostName: "P0" });
+    const code = host.view.code;
+    await service.sit(code, host.token, 0);
+    for (let i = 1; i < 9; i++) await service.join(code, { name: `P${i}`, autoSit: true });
+    const late = await service.join(code, { name: "Late", autoSit: true });
+    expect(late.view.me!.seat).toBeNull();
+  });
+});

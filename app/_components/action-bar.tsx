@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import type { Action } from "@/lib/engine";
 import type { RoomView } from "@/lib/room";
-import { storage } from "@/lib/client/api";
 import { ConfirmButton } from "./bits";
 import { useChips } from "./chips";
 import { useLang } from "./lang";
@@ -12,13 +11,12 @@ interface Props {
   now: number;
   busy: boolean;
   onAct: (a: Action) => void;
-  onJoin: (name: string) => void;
   onCommand: (body: Record<string, unknown>) => void;
   onLeave: () => void;
 }
 
 /** Bottom bar in the thumb zone. Shows exactly what you can do right now. */
-export function ActionBar({ view, now, busy, onAct, onJoin, onCommand, onLeave }: Props) {
+export function ActionBar({ view, now, busy, onAct, onCommand, onLeave }: Props) {
   const { t } = useLang();
   const { fmt } = useChips();
   const me = view.me;
@@ -26,41 +24,20 @@ export function ActionBar({ view, now, busy, onAct, onJoin, onCommand, onLeave }
   const legal = hand?.legal ?? null;
   const [raising, setRaising] = useState(false);
   const [amount, setAmount] = useState(0);
-  const [name, setName] = useState("");
   const hostName = view.players.find((p) => p.isHost)?.name ?? "";
 
-  useEffect(() => setName(storage.getName()), []);
   // Close the raise panel whenever the turn changes.
   useEffect(() => setRaising(false), [hand?.handNumber, hand?.log.length]);
 
-  // 1. Not in the room yet: join.
-  if (!me) {
-    const submit = (e: FormEvent) => {
-      e.preventDefault();
-      if (name.trim()) onJoin(name.trim());
-    };
+  // 1. Not in the room yet: the join card on the table has the name field.
+  if (!me)
     return (
-      <form className="bar" onSubmit={submit}>
-        <div className="small muted" style={{ textAlign: "center" }}>
-          {t("joinTitle", { code: view.code })}
+      <div className="bar">
+        <div className="bar-row">
+          <div className="note">{t("joinHint")}</div>
         </div>
-        <div className="bar-row" style={{ gridTemplateColumns: "1fr auto", gridAutoFlow: "row" }}>
-          <input
-            className="input"
-            value={name}
-            maxLength={20}
-            autoComplete="nickname"
-            placeholder={t("yourName")}
-            aria-label={t("yourName")}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <button className="btn btn-primary" disabled={!name.trim() || busy}>
-            {busy ? t("joining") : t("join")}
-          </button>
-        </div>
-      </form>
+      </div>
     );
-  }
 
   // 2. My turn.
   if (legal) {
