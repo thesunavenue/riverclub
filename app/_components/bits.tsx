@@ -184,14 +184,24 @@ export function ConfirmButton({
 }
 
 /** Small countdown ring with the seconds left inside. `left` goes from 1 to 0. */
+/** Countdown ring around the avatar: green, then orange, then red as time runs out. */
 export function TimerRing({ left, seconds }: { left: number; seconds: number }) {
+  const p = Math.max(0, Math.min(1, left));
+  const level = p > 0.5 ? "ok" : p > 0.25 ? "warn" : "low";
+  const C = 2 * Math.PI * 16;
   return (
-    <span
-      className={`ring ${left < 0.25 ? "low" : ""}`}
-      style={{ ["--p" as string]: Math.max(0, Math.min(1, left)) }}
-      role="timer"
-      aria-label={`${seconds}s`}
-    >
+    <span className={`ring ${level}`} role="timer" aria-label={`${seconds}s`}>
+      <svg viewBox="0 0 36 36" aria-hidden>
+        <circle className="track" cx="18" cy="18" r="16" />
+        <circle
+          className="bar"
+          cx="18"
+          cy="18"
+          r="16"
+          transform="rotate(-90 18 18)"
+          style={{ strokeDasharray: `${p * C} ${C}` }}
+        />
+      </svg>
       <b className="num">{seconds}</b>
     </span>
   );

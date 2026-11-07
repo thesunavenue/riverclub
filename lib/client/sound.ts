@@ -92,6 +92,15 @@ export function playYourTurn() {
   tone(1320, t + 0.12, 0.25, 0.1);
 }
 
+/** Short beep for the last seconds of your turn; the final two are higher. */
+export function playBeep(urgent = false) {
+  const a = audio();
+  if (!a || a.state !== "running") return;
+  const t = a.currentTime;
+  tone(urgent ? 1560 : 1180, t, 0.09, 0.16, "square");
+  if (urgent) tone(1560, t + 0.13, 0.09, 0.16, "square");
+}
+
 /** Small rising chime for winning a pot. */
 export function playWin() {
   const a = audio();

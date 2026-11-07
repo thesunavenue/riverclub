@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Action } from "@/lib/engine";
 import { ApiError } from "@/lib/client/api";
 import { useRoom } from "@/lib/client/useRoom";
@@ -13,6 +13,7 @@ import { HistorySheet } from "./history-sheet";
 import { usePrefs } from "./prefs";
 import { ChatSheet, MenuSheet } from "./sheets";
 import { useTableSounds } from "@/lib/client/useTableSounds";
+import { playBeep } from "@/lib/client/sound";
 import { Table } from "./table";
 
 export function RoomScreen({ code }: { code: string }) {
@@ -29,6 +30,18 @@ export function RoomScreen({ code }: { code: string }) {
 
   const ticking = !!view && (view.turnDeadline !== null || view.nextHandAt !== null);
   const now = useTicker(room.serverNow, ticking);
+
+  // Beep each of the last 5 seconds of my turn (this device only).
+  const myTurnLive = !!view?.hand?.legal && view.turnDeadline !== null;
+  const secsLeft = myTurnLive ? Math.ceil((view!.turnDeadline! - now) / 1000) : null;
+  const lastBeep = useRef<string | null>(null);
+  useEffect(() => {
+    if (secsLeft === null || secsLeft < 1 || secsLeft > 5 || !prefs.sound) return;
+    const key = `${view?.turnDeadline}:${secsLeft}`;
+    if (lastBeep.current === key) return;
+    lastBeep.current = key;
+    playBeep(secsLeft <= 2);
+  }, [secsLeft, view?.turnDeadline, prefs.sound]);
 
   useEffect(() => {
     if (!toast) return;

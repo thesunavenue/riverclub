@@ -1,5 +1,5 @@
 "use client";
-import { useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { HandView, LogEntry } from "@/lib/engine";
 import { boardPlan, type CardReveal } from "@/lib/client/boardPlan";
 import type { RoomPlayerView, RoomView } from "@/lib/room";
@@ -11,10 +11,11 @@ import { useLang } from "./lang";
 import { winnings } from "./winnings";
 
 /**
- * Seat slots around a portrait oval, as % of the table area. Slot 0 is bottom centre (you),
- * then clockwise: bottom-left, left, top-left, top, top-right, right, bottom-right.
+ * Seat slots as % of the table area. Slot 0 is bottom centre (you), then clockwise:
+ * bottom-left, left, top-left, top, top-right, right, bottom-right.
+ * Portrait for phones, landscape for laptops and tablets held sideways.
  */
-const SLOTS: [number, number][] = [
+const SLOTS_TALL: [number, number][] = [
   [50, 93],
   [14, 79],
   [10, 54],
@@ -25,6 +26,32 @@ const SLOTS: [number, number][] = [
   [90, 54],
   [86, 79],
 ];
+const SLOTS_WIDE: [number, number][] = [
+  [50, 90],
+  [24, 84],
+  [10, 56],
+  [16, 20],
+  [37, 8],
+  [63, 8],
+  [84, 20],
+  [88, 56],
+  [76, 84],
+];
+/** Same query as the CSS that widens the room. */
+export const WIDE_QUERY = "(min-width: 820px) and (min-aspect-ratio: 1/1)";
+
+function useWide(): boolean {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia(WIDE_QUERY);
+    const on = () => setWide(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return wide;
+}
+
 const CENTER: [number, number] = [50, 46];
 
 /** "+4BB" style: winnings in big blinds read at a glance. */
@@ -33,8 +60,8 @@ function bbText(amount: number, bigBlind: number): string {
   return `${bb}BB`;
 }
 
-function slotOf(seat: number, mySeat: number): [number, number] {
-  return SLOTS[(seat - mySeat + 9) % 9]!;
+function slotOf(seat: number, mySeat: number, wide = false): [number, number] {
+  return (wide ? SLOTS_WIDE : SLOTS_TALL)[(seat - mySeat + 9) % 9]!;
 }
 
 function toward(p: [number, number], f: number): [number, number] {
@@ -64,6 +91,7 @@ interface TableProps {
 export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps) {
   const { t } = useLang();
   const { fmt } = useChips();
+  const wide = useWide();
   const me = view.me;
   const mySeat = me?.seat ?? 0;
   const hand = view.hand;
@@ -98,6 +126,12 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
   const reveal = plan.current?.hand === hand?.handNumber ? plan.current : null;
   // Results wait until the last board card is face up.
   const resultDelay: CSSProperties = { animationDelay: `${reveal?.endsAt ?? 0}s` };
+  // Showdown: light up the winners' five cards (board and hole), dim everything else.
+  const winCards = new Set<string>();
+  if (hand?.result?.showdown)
+    for (const id of winners) for (const c of hand.result.hands[id]?.cards ?? []) winCards.add(c);
+  const hl = (c: string | null | undefined) => (!winCards.size || !c ? "" : winCards.has(c) ? "hl-win" : "hl-lose");
+  const hlDelay = { "--rd": `${(reveal?.endsAt ?? 0) + 0.4}s` } as CSSProperties;
 
   const msLeft = active && view.turnDeadline ? Math.max(0, view.turnDeadline - now) : 0;
   const turnLeft = msLeft / (view.settings.turnSeconds * 1000);
@@ -117,7 +151,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
   }
 
   return (
-    <div className="table-wrap">
+    <div className={`table-wrap ${wide ? "wide" : ""}`} style={hlDelay}>
       <div className="table" />
 
       {/* centre: board, pot, result */}
@@ -126,7 +160,11 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
           {[0, 1, 2, 3, 4].map((i) => {
             const c = hand?.board[i];
             if (!c) return <Card key={`slot-${i}`} card={undefined} />;
-            return <BoardCard key={`${hand!.handNumber}-${c}`} card={c} reveal={reveal?.cards.get(i)} />;
+            return (
+              <span key={`${hand!.handNumber}-${c}`} className={`hl ${hl(c)}`}>
+                <BoardCard card={c} reveal={reveal?.cards.get(i)} />
+              </span>
+            );
           })}
         </div>
         {active && hand.pot > 0 && (
@@ -152,7 +190,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
       {/* seats */}
       {Array.from({ length: 9 }, (_, seat) => {
         const p = bySeat.get(seat);
-        const [x, y] = slotOf(seat, mySeat);
+        const [x, y] = slotOf(seat, mySeat, wide);
         if (!p) {
           if (!canSit) return null; // only show empty seats to someone looking for one
           return (
@@ -183,8 +221,12 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
           <div key={seat} className={cls} style={{ left: `${x}%`, top: `${y}%` }}>
             {!isMe && p.shown ? (
               <div className="seat-cards shown" key={`shown-${hand?.handNumber}-${p.shown.join()}`}>
-                <span className="anim-flip"><Card card={p.shown[0]} size="sm" /></span>
-                <span className="anim-flip" style={{ animationDelay: "90ms" }}><Card card={p.shown[1]} size="sm" /></span>
+                <span className="anim-flip">
+                  <Card card={p.shown[0]} size="sm" />
+                </span>
+                <span className="anim-flip" style={{ animationDelay: "90ms" }}>
+                  <Card card={p.shown[1]} size="sm" />
+                </span>
               </div>
             ) : (
               !isMe &&
@@ -192,8 +234,12 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
               !hp.folded &&
               (hp.hole || active) && (
                 <div className="seat-cards anim-deal" key={`deal-${hand?.handNumber}`}>
-                  <Card card={hp.hole?.[0] ?? null} size="sm" />
-                  <Card card={hp.hole?.[1] ?? null} size="sm" />
+                  <span className={`hl ${hl(hp.hole?.[0])}`}>
+                    <Card card={hp.hole?.[0] ?? null} size="sm" />
+                  </span>
+                  <span className={`hl ${hl(hp.hole?.[1])}`}>
+                    <Card card={hp.hole?.[1] ?? null} size="sm" />
+                  </span>
                 </div>
               )
             )}
@@ -218,13 +264,20 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
               {active && hp && hand.bigBlindSeat === seat && <span className="pos-tag bb">{t("bbTag")}</span>}
               {isTurn && <TimerRing left={turnLeft} seconds={Math.ceil(msLeft / 1000)} />}
             </div>
-            <div className="name">{p.name}</div>
+            <div className="plate">
+              <div className="name">{p.name}</div>
+              <Amount className="stack" value={p.stack} />
+            </div>
             {gains.has(p.id) && (
               <span key={`gain-${hand?.handNumber}`} className="gain num" style={resultDelay}>
                 +{bbText(gains.get(p.id)!, view.settings.bigBlind)}
               </span>
             )}
-            <Amount className="stack" value={p.stack} />
+            {hand?.result && winners.has(p.id) && (
+              <div className="winner-tag" key={`win-${hand.handNumber}`} style={resultDelay}>
+                {t("winnerTag")}
+              </div>
+            )}
             {p.out ? (
               <div className="tag">{t("outTag")}</div>
             ) : label && !isTurn ? (
@@ -243,7 +296,7 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
         hand.players
           .filter((hp) => hp.bet > 0)
           .map((hp) => {
-            const [x, y] = toward(slotOf(hp.seat, mySeat), 0.55);
+            const [x, y] = toward(slotOf(hp.seat, mySeat, wide), wide ? 0.42 : 0.55);
             return (
               <span key={`${hp.id}-${hp.bet}`} className="bet-pos anim-chip" style={{ left: `${x}%`, top: `${y}%` }}>
                 <Amount className="bet-chip" value={hp.bet} />
@@ -254,10 +307,10 @@ export function Table({ view, now, busy, onSit, onJoin, onCommand }: TableProps)
       {/* my cards, large */}
       {mine?.hole && (
         <div className="my-cards" key={`mine-${hand?.handNumber}`}>
-          <span className="anim-deal">
+          <span className={`anim-deal hl ${hl(mine.hole[0])}`}>
             <Card card={mine.hole[0]} size="lg" dim={mine.folded} />
           </span>
-          <span className="anim-deal" style={{ animationDelay: "120ms" }}>
+          <span className={`anim-deal hl ${hl(mine.hole[1])}`} style={{ animationDelay: "120ms" }}>
             <Card card={mine.hole[1]} size="lg" dim={mine.folded} />
           </span>
           {myShown && <div className="my-hand-name">{t(myShown.category)}</div>}

@@ -259,10 +259,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 @media (min-height: 760px) {
   .avatar { width: 52px; height: 52px; }
 }
-/* "Reduce motion": drop the big movements (flying, sliding, pulsing); keep fades and card flips. */
+/* "Reduce motion": only the endless pulsing/flickering loops stop; one-off moves (deal, flop, flips) stay. */
 @media (prefers-reduced-motion: reduce) {
-  .anim-deal, .anim-spread, .anim-chip, .anim-pop, .anim-pulse, .empty-seat.can-sit,
-  .seat.turn .avatar, .seat.winner .avatar, .seat.allin .avatar, .flames i { animation: none !important; }
+  .empty-seat.can-sit, .seat.turn .avatar, .seat.allin .avatar, .flames i { animation: none !important; }
 }
 
 /* ---------- table looks (per device). Only colours change. ---------- */
@@ -452,3 +451,80 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; ma
 .show-row .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .late-in { animation: lateIn 0.4s ease-out both; }
 @keyframes lateIn { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+/* ---------- seats: avatar + name plate ---------- */
+.seat { width: 86px; gap: 0; }
+.seat .avatar { z-index: 2; }
+.seat .plate {
+  margin-top: -7px; z-index: 1; min-width: 66px; max-width: 86px; padding: 4px 8px 3px; border-radius: 10px;
+  background: rgba(6, 12, 14, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  display: grid; justify-items: center; line-height: 1.2;
+}
+.seat .plate .name { font-size: 11px; color: var(--muted); max-width: 74px; }
+.seat .plate .stack { background: none; padding: 0; font-size: 13px; font-weight: 800; color: var(--ink); }
+.seat-cards .card + .card { margin-left: 0; }
+.seat-cards > * + * { margin-left: -8px; }
+.seat .last, .seat .tag { margin-top: 2px; }
+.winner-tag {
+  margin-top: 2px; font-size: 11px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; color: #ffd27a;
+  text-shadow: 0 0 8px rgba(255, 190, 80, 0.65); animation: winTag 0.45s ease-out both;
+}
+@keyframes winTag { from { opacity: 0; transform: translateY(5px) scale(0.85); } to { opacity: 1; transform: none; } }
+
+/* bets: a small chip and the amount */
+.bet-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(0, 0, 0, 0.45); border: none; padding: 2px 9px 2px 3px; }
+.bet-chip::before {
+  content: ""; width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; flex: none;
+  background: #d9443a; border: 2.5px dashed #fff; box-shadow: 0 0 0 1px #d9443a;
+}
+
+/* ---------- turn timer: ring around the avatar, green → orange → red ---------- */
+.ring, .ring.low {
+  position: absolute; inset: -6px; width: auto; height: auto; background: none; display: block; border-radius: 50%;
+  z-index: 3; pointer-events: none; transition: none;
+}
+.ring::before { display: none; }
+.ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring .track { fill: none; stroke: rgba(255, 255, 255, 0.12); stroke-width: 3; }
+.ring .bar { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.25s linear, stroke 0.4s; }
+.ring.ok .bar { stroke: #4cc38a; } .ring.warn .bar { stroke: #f0a35e; } .ring.low .bar { stroke: #e5484d; }
+.ring b {
+  position: absolute; inset: 6px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.55); font-size: 18px; font-weight: 800;
+}
+.ring.ok b { color: #8be0b4; } .ring.warn b { color: #ffc58a; } .ring.low b { color: #ff8f8f; animation: tickPulse 1s ease-in-out infinite; }
+@keyframes tickPulse { 50% { transform: scale(1.12); } }
+
+/* ---------- showdown: winning cards light up, the rest go dark ---------- */
+.hl { display: inline-block; }
+.hl .card { transition: filter 0.35s ease var(--rd, 0s), transform 0.35s ease var(--rd, 0s), box-shadow 0.35s ease var(--rd, 0s); }
+.hl-lose .card { filter: brightness(0.45) saturate(0.6); }
+.hl-win .card { transform: translateY(-5px); box-shadow: 0 0 0 2px #ffd27a, 0 0 16px 3px rgba(255, 200, 100, 0.45), 0 4px 10px rgba(0, 0, 0, 0.4); }
+
+/* ---------- laptop / landscape: wide table, plates beside avatars ---------- */
+@media (min-width: 820px) and (min-aspect-ratio: 1/1) {
+  .room { max-width: 1280px; }
+  .bar > * { width: 100%; max-width: 640px; justify-self: center; }
+}
+.table-wrap.wide .table { inset: 9% 8% 11%; border-radius: 999px; }
+.table-wrap.wide .center { top: 47%; width: 62%; gap: 10px; }
+.table-wrap.wide .board { gap: 8px; }
+.table-wrap.wide .board .card { font-size: 24px; }
+.table-wrap.wide .card.sm { font-size: 14px; }
+.table-wrap.wide .seat { width: auto; display: flex; align-items: center; }
+.table-wrap.wide .avatar { width: 62px; height: 62px; }
+.table-wrap.wide .avatar .emoji { font-size: 32px; }
+.table-wrap.wide .seat .plate { margin: 0 0 0 -18px; padding: 5px 14px 5px 24px; min-width: 110px; max-width: 150px; justify-items: start; }
+.table-wrap.wide .seat .plate .name { font-size: 13px; max-width: 120px; }
+.table-wrap.wide .seat .plate .stack { font-size: 16px; }
+.table-wrap.wide .seat .last, .table-wrap.wide .seat .tag, .table-wrap.wide .winner-tag {
+  position: absolute; top: 100%; left: 0; right: 0; text-align: center; white-space: nowrap;
+}
+/* cards tucked behind the plate, peeking out above it */
+.table-wrap.wide .seat-cards { top: auto; bottom: 56%; left: 40px; z-index: 0; }
+.table-wrap.wide .seat .plate { position: relative; z-index: 1; }
+.table-wrap.wide .flames { left: 31px; }
+.table-wrap.wide .my-cards { bottom: calc(10% + 58px); }
+.table-wrap.wide .card.lg { font-size: 26px; }
+.table-wrap.wide .ring b { font-size: 22px; }
+.table-wrap.wide .gain { left: auto; right: -10px; top: -14px; }
